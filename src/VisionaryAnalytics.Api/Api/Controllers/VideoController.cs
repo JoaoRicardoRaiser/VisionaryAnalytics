@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using VisionaryAnalytics.Api.Application.Interfaces;
 
 namespace VisionaryAnalytics.Api.Presentation.Controllers;
 
@@ -7,9 +8,13 @@ namespace VisionaryAnalytics.Api.Presentation.Controllers;
 public class VideoController : Controller
 {
     [HttpPost("/upload")]
-    public IActionResult UploadAsync()
+    public async Task<IActionResult> UploadAsync(
+        List<IFormFile> files,
+        [FromServices] IVideoService videoSerivce)
     {
 
+        await videoSerivce.UploadAsync(files);
+        
         return Ok();
     }
 }
