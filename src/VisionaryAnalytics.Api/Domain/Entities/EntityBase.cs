@@ -1,10 +1,12 @@
 ﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace VisionaryAnalytics.Api.Domain.Entities
 {
     public class EntityBase
     {
-        public ObjectId Id { get; set; }
+        [BsonId]
+        public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }

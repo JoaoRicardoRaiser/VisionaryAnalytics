@@ -1,11 +1,16 @@
 ﻿using AutoMapper;
-using VisionaryAnalytics.Api.Application.Interfaces;
+using Raisersoft.EasyRabbit.Interfaces;
+using VisionaryAnalytics.Api.Application.Dtos;
+using VisionaryAnalytics.Api.Application.Interfaces.Repositories;
+using VisionaryAnalytics.Api.Application.Interfaces.Services;
 using VisionaryAnalytics.Api.Domain.Entities;
-using VisionaryAnalytics.Api.Domain.Interfaces;
 
 namespace VisionaryAnalytics.Api.Application.Services;
 
-public class VideoService(IMapper mapper, IRepository<Video> videoRepository) : IVideoService
+public class VideoService(
+    IMapper mapper, 
+    IVideoRepository videoRepository,
+    IMessagePublisherService<VideoReceivedEventDto> publisher) : IVideoService
 {
     public async Task UploadAsync(IEnumerable<IFormFile> files)
     {
@@ -17,7 +22,9 @@ public class VideoService(IMapper mapper, IRepository<Video> videoRepository) : 
 
             await videoRepository.UpsertAsync(video);
 
-            //var eventDto = mapper.Map<VideoReceivedEventDto>(video);
+            var eventDto = mapper.Map<VideoReceivedEventDto>(video);
+
+            await publisher.SendMessageAsync(eventDto);
         }
     }
 

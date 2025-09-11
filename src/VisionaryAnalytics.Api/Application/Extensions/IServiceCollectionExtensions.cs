@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using VisionaryAnalytics.Api.Application.Interfaces;
+using VisionaryAnalytics.Api.Application.Interfaces.Services;
 using VisionaryAnalytics.Api.Application.Services;
 
 namespace VisionaryAnalytics.Api.Application.Extensions;

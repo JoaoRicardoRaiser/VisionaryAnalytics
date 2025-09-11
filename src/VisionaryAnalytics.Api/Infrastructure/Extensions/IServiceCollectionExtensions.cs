@@ -1,5 +1,7 @@
 ﻿using MongoDB.Driver;
-using VisionaryAnalytics.Api.Domain.Interfaces;
+using Raisersoft.EasyRabbit.Extensions;
+using VisionaryAnalytics.Api.Application.Dtos;
+using VisionaryAnalytics.Api.Application.Interfaces.Repositories;
 using VisionaryAnalytics.Api.Infrastructure.Database.Repositories;
 
 namespace VisionaryAnalytics.Api.Infrastructure.Extensions;
@@ -11,6 +13,16 @@ public static class IServiceCollectionExtensions
 
         services.AddDatabase(configuration);
         services.AddRepositories();
+        services.AddRabbitMq();
+        return services;
+    }
+
+    private static IServiceCollection AddRabbitMq(this IServiceCollection services)
+    {
+        services.AddEasyRabbitMq();
+
+        services.AddPublisher<VideoReceivedEventDto>("VideoReceived");
+
         return services;
     }
 
@@ -23,7 +35,7 @@ public static class IServiceCollectionExtensions
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped(typeof(IRepository<>), typeof(RepositoryBase<>));
+        services.AddScoped<IVideoRepository, VideoRepository>();
         return services;
     }
 }
