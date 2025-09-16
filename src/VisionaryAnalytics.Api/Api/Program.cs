@@ -1,4 +1,4 @@
-using VisionaryAnalytics.Api.Api.Extensions;
+using VisionaryAnalytics.Api.Extensions;
 using VisionaryAnalytics.Api.Application.Extensions;
 using VisionaryAnalytics.Api.Infrastructure.Extensions;
 

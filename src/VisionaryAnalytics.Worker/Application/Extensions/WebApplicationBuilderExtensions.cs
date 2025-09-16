@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
-namespace VisionaryAnalytics.Api.Extensions;
+namespace VisionaryAnalytics.Worker.Application.Extensions;
 
 [ExcludeFromCodeCoverage]
 public static class WebApplicationBuilderExtensions
@@ -20,6 +20,6 @@ public static class WebApplicationBuilderExtensions
     public static string GetAppsettingsFileName()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? default;
-        return environment == default ? "Api\\appsettings.json" : string.Format("Api\\appsettings.{0}.json", environment);
+        return environment == default ? "Application\\appsettings.json" : string.Format("Application\\appsettings.{0}.json", environment);
     }
 }

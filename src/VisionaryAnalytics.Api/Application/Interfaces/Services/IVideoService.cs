@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-
-namespace VisionaryAnalytics.Api.Application.Interfaces.Services;
+﻿namespace VisionaryAnalytics.Api.Application.Interfaces.Services;
 
 public interface IVideoService
 {

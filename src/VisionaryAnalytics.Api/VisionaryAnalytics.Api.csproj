@@ -4,17 +4,21 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>b217a7fc-485e-400a-8525-3eaf121d343f</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Application\Properties\**" />
+    <Content Remove="Application\Properties\**" />
+    <EmbeddedResource Remove="Application\Properties\**" />
+    <None Remove="Application\Properties\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="15.0.1" />
     <PackageReference Include="MongoDB.Driver" Version="3.4.3" />
     <PackageReference Include="Raisersoft.EasyRabbit" Version="1.0.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Domain\Interfaces\" />
   </ItemGroup>
 
 </Project>
