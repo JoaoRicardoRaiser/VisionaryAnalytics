@@ -8,13 +8,16 @@ using VisionaryAnalytics.Api.Domain.Entities;
 namespace VisionaryAnalytics.Api.Application.Services;
 
 public class VideoService(
+    IConfiguration configuration,
     IMapper mapper, 
     IVideoRepository videoRepository,
     IMessagePublisherService<VideoReceivedEventDto> publisher) : IVideoService
 {
+
+    private readonly string PathToSaveVideo = configuration["PathToSaveVideos"]!;
+
     public async Task UploadAsync(IEnumerable<IFormFile> files)
     {
-
         foreach (var file in files)
         {
             var video = mapper.Map<Video>(file);
@@ -28,9 +31,9 @@ public class VideoService(
         }
     }
 
-    private static async Task SaveVideo(IFormFile file, Video video)
+    private async Task SaveVideo(IFormFile file, Video video)
     {
-        var directoryPath = Path.Combine(Path.GetTempPath(), "VisionaryAnalytics");
+        var directoryPath = Path.Combine(PathToSaveVideo, "VisionaryAnalytics");
         Directory.CreateDirectory(directoryPath);
 
         string filePath = Path.Combine(directoryPath, file.FileName);

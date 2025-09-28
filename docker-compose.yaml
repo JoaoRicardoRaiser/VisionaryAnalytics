@@ -1,0 +1,82 @@
+name: visionary_analytics
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - visionary_analytics_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+  
+  rabbitMq:
+    image: rabbitmq:3-management
+    container_name: rabbitMq
+    restart: always
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - visionary_analytics_network
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "rabbitmq-diagnostics status"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  
+  visionary-analytics-api:
+    build: src/VisionaryAnalytics.Api
+    container_name: api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    volumes:
+      - shared-data:/App/VisionaryAnalytics
+    ports:
+      - "8080:8080"
+    networks:
+      - visionary_analytics_network
+    depends_on:
+      mongo:
+          condition: service_healthy
+      rabbitMq:
+          condition: service_healthy
+          
+  visionary-analytics-worker:
+    build: src/VisionaryAnalytics.Worker
+    container_name: worker
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    volumes:
+      - shared-data:/App/VisionaryAnalytics
+    ports:
+      - "8081:8080"
+    networks:
+      - visionary_analytics_network
+    depends_on:
+      mongo:
+          condition: service_healthy
+      rabbitMq:
+          condition: service_healthy
+
+volumes:
+  mongo_data:
+  shared-data:
+
+networks:
+  visionary_analytics_network:
+    driver: bridge

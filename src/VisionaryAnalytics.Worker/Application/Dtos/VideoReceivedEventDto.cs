@@ -2,5 +2,5 @@
 
 public record VideoReceivedEventDto
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = default!;
 }

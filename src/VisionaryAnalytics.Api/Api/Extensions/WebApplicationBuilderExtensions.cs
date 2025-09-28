@@ -20,6 +20,6 @@ public static class WebApplicationBuilderExtensions
     public static string GetAppsettingsFileName()
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? default;
-        return environment == default ? "Api\\appsettings.json" : string.Format("Api\\appsettings.{0}.json", environment);
+        return environment == default ? "appsettings.json" : string.Format("appsettings.{0}.json", environment);
     }
 }
