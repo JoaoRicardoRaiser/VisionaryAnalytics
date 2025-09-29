@@ -6,10 +6,17 @@ using VisionaryAnalytics.Worker.Domain.Enums;
 
 namespace VisionaryAnalytics.Worker.Infrastructure.Database.Repositories;
 
-public class VideoRepository(MongoClient client) : IVideoRepository
+public class VideoRepository : IVideoRepository
 {
+    private readonly MongoClient _client;
     private const string Database = "visionary_analytics_db";
-    private readonly IMongoCollection<Video> _collection = client.GetDatabase(Database).GetCollection<Video>(nameof(Video));
+    private readonly IMongoCollection<Video> _collection;
+
+    public VideoRepository(MongoClient client)
+    {
+        _client = client;
+        _collection = client.GetDatabase(Database).GetCollection<Video>(nameof(Video));
+    }
 
     public async Task<Video?> GetAsync(ObjectId? id)
     {

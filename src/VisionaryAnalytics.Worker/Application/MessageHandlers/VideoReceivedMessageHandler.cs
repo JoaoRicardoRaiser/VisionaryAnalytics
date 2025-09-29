@@ -5,8 +5,15 @@ using VisionaryAnalytics.Worker.Application.Interfaces.Services;
 
 namespace VisionaryAnalytics.Worker.Application.MessageHandlers;
 
-public class VideoReceivedMessageHandler(IVideoService service) : IMessageHandler<VideoReceivedEventDto>
+public class VideoReceivedMessageHandler : IMessageHandler<VideoReceivedEventDto>
 {
+    private readonly IVideoService _service;
+
+    public VideoReceivedMessageHandler(IVideoService service)
+    {
+        _service = service;
+    }
+
     public async Task HandleAsync(VideoReceivedEventDto message)
-        => await service.ProcessVideo(new ObjectId(message.Id));
+        => await _service.ProcessVideo(new ObjectId(message.Id));
 }

@@ -8,82 +8,97 @@ using VisionaryAnalytics.Worker.Domain.Enums;
 
 namespace VisionaryAnalytics.Worker.Application.Services;
 
-public class VideoService(ILogger<VideoService> logger, IVideoRepository videoRepository) : IVideoService
+public class VideoService : IVideoService
 {
+    private readonly ILogger<VideoService> _logger;
+    private readonly IVideoRepository _videoRepository;
+
+    public VideoService(ILogger<VideoService> logger, IVideoRepository videoRepository)
+    {
+        _logger = logger;
+        _videoRepository = videoRepository;
+    }
     public async Task ProcessVideo(ObjectId? videoId)
     {
-        if (videoId is null) return;
-
-        var video = await videoRepository.GetAsync(videoId);
-        if (video is null)
+        try
         {
-            logger.LogInformation("Video not found. id: {Id}", videoId);
-            return;
-        }
+            if (videoId is null) return;
 
-        using var capture = new VideoCapture(video.Path);
-        if (!capture.IsOpened())
-        {
-            logger.LogInformation("Video already open, cannot process.");
-            return;
-        }
-
-        logger.LogInformation($"Starting analysis to video: {video.Name}");
-        await videoRepository.UpdateStatusAsync(videoId.Value, VideoStatus.Processing);
-
-        var qrCodeContents = new ConcurrentDictionary<string, bool>();
-        var qrCodesToSave = new ConcurrentBag<QRCode>();
-        var frameQueue = new BlockingCollection<(Mat frame, int index)>(boundedCapacity: 50);
-
-        var producer = Task.Run(() =>
-        {
-            int frameCount = 0;
-            using var frame = new Mat();
-            while (capture.Read(frame) && !frame.Empty())
+            var video = await _videoRepository.GetAsync(videoId);
+            if (video is null)
             {
-                frameQueue.Add((frame.Clone(), frameCount));
-                frameCount++;
+                _logger.LogInformation("Video not found. id: {Id}", videoId);
+                return;
             }
-            frameQueue.CompleteAdding();
-        });
 
-        var consumers = Enumerable.Range(0, Environment.ProcessorCount).Select(_ => Task.Run(() =>
-        {
-            var qrDecoder = new QRCodeDetector();
-            foreach (var (frame, index) in frameQueue.GetConsumingEnumerable())
+            using var capture = new VideoCapture(video.Path);
+            if (!capture.IsOpened())
             {
-                string decodedText = qrDecoder.DetectAndDecode(frame, out Point2f[] points);
+                _logger.LogInformation("Video already open, cannot process.");
+                return;
+            }
 
-                if (!string.IsNullOrEmpty(decodedText) && qrCodeContents.TryAdd(decodedText, true))
+            _logger.LogInformation($"Starting analysis to video: {video.Name}");
+            await _videoRepository.UpdateStatusAsync(videoId.Value, VideoStatus.Processing);
+
+            var qrCodeContents = new ConcurrentDictionary<string, bool>();
+            var qrCodesToSave = new ConcurrentBag<QRCode>();
+            var frameQueue = new BlockingCollection<(Mat frame, int index)>(boundedCapacity: 50);
+
+            var producer = Task.Run(() =>
+            {
+                int frameCount = 0;
+                using var frame = new Mat();
+                while (capture.Read(frame) && !frame.Empty())
                 {
-                    double timestampMs = capture.Get(VideoCaptureProperties.PosMsec);
-                    var ts = TimeSpan.FromMilliseconds(timestampMs);
-                    qrCodesToSave.Add(new QRCode(index, decodedText, ts));
+                    frameQueue.Add((frame.Clone(), frameCount));
+                    frameCount++;
                 }
+                frameQueue.CompleteAdding();
+            });
 
-                frame.Dispose();
-            }
-        })).ToArray();
+            var consumers = Enumerable.Range(0, Environment.ProcessorCount).Select(_ => Task.Run(() =>
+            {
+                var qrDecoder = new QRCodeDetector();
+                foreach (var (frame, index) in frameQueue.GetConsumingEnumerable())
+                {
+                    string decodedText = qrDecoder.DetectAndDecode(frame, out Point2f[] points);
 
-        await producer;
-        await Task.WhenAll(consumers);
+                    if (!string.IsNullOrEmpty(decodedText) && qrCodeContents.TryAdd(decodedText, true))
+                    {
+                        double timestampMs = capture.Get(VideoCaptureProperties.PosMsec);
+                        var ts = TimeSpan.FromMilliseconds(timestampMs);
+                        qrCodesToSave.Add(new QRCode(index, decodedText, ts));
+                    }
 
-        await SaveQrCodeInfosAsync(qrCodesToSave.ToList(), video);
-        await videoRepository.UpdateStatusAsync(videoId.Value, VideoStatus.Finished);
+                    frame.Dispose();
+                }
+            })).ToArray();
 
-        capture.Release();
-        logger.LogInformation($"Finishing analysis to video: {video.Name}");
+            await producer;
+            await Task.WhenAll(consumers);
+
+            await SaveQrCodeInfosAsync(qrCodesToSave.ToList(), video);
+            await _videoRepository.UpdateStatusAsync(videoId.Value, VideoStatus.Finished);
+
+            capture.Release();
+            _logger.LogInformation($"Finishing analysis to video: {video.Name}");
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+        }
     }
 
     private async Task SaveQrCodeInfosAsync(IList<QRCode> foundQrCodes, Video video)
     {
         if (foundQrCodes.Count == 0)
         {
-            logger.LogInformation("QR codes not found for video: {videoPath}", video.Path);
+            _logger.LogInformation("QR codes not found for video: {videoPath}", video.Path);
             return;
         }
 
-        await videoRepository.UpsertQrCodesAsync(video.Id, foundQrCodes);
+        await _videoRepository.UpsertQrCodesAsync(video.Id, foundQrCodes);
 
     }
 }

@@ -13,5 +13,5 @@ public class Video : EntityBase
     [BsonRepresentation(BsonType.String)]
     public VideoStatus Status { get; set; }
 
-    public List<QRCode> QRCodes { get; set; } = [];
+    public List<QRCode> QRCodes { get; set; } = new();
 }
